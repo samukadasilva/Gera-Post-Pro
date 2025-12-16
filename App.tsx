@@ -341,6 +341,7 @@ const AuthOverlay = ({
 const App: React.FC = () => {
   const [postData, setPostData] = useState<PostData>(INITIAL_POST_DATA);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showDownloadCanvas, setShowDownloadCanvas] = useState(false); // New state to trigger the overlay
   const [previewScale, setPreviewScale] = useState(0.4);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
@@ -518,31 +519,38 @@ const App: React.FC = () => {
   }, [postData.format, isSidebarOpen]);
 
   const handleDownload = async () => {
-    const element = document.getElementById('ghost-canvas-download'); 
-    
-    if (!element || typeof html2canvas === 'undefined') {
-      console.error("Ghost Canvas element not found");
-      return;
-    }
-
     setIsDownloading(true);
+    // 1. Activate the full-screen overlay for rendering
+    setShowDownloadCanvas(true);
 
     try {
-      // Allow the DOM to settle
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // 2. Wait a significant amount of time for the hidden canvas to render images fully
+      await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+      const element = document.getElementById('final-canvas-export'); 
+      
+      if (!element || typeof html2canvas === 'undefined') {
+        console.error("Download Canvas element not found");
+        throw new Error("Elemento de renderização não encontrado");
+      }
+
+      // 3. Scroll to top to avoid offset bugs
+      window.scrollTo(0, 0);
 
       // Get accurate dimensions for the format
       const { width, height } = ASPECT_RATIOS[postData.format];
 
       const canvas = await html2canvas(element, {
-        scale: 2, // High resolution (2x)
+        scale: 2, // High resolution
         width: width,
         height: height,
         useCORS: true, 
         allowTaint: false,
         backgroundColor: null,
         logging: false,
-        windowWidth: width, // Important: force window size context to match image
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: width,
         windowHeight: height,
         x: 0,
         y: 0
@@ -556,8 +564,10 @@ const App: React.FC = () => {
       link.click();
     } catch (error) {
       console.error("Error generating image:", error);
-      alert("Erro ao baixar a imagem. Se você estiver usando uma imagem externa (não enviada por upload), o site de origem pode estar bloqueando o download.");
+      alert("Erro ao gerar a imagem. Tente novamente.");
     } finally {
+      // 4. Cleanup
+      setShowDownloadCanvas(false);
       setIsDownloading(false);
     }
   };
@@ -698,28 +708,26 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Ghost Renderer for Download 
-            STRATEGY CHANGE: 
-            Instead of negative coordinates (which cause issues on some renderers),
-            we position it fixed in the center but completely invisible via opacity/z-index.
-            This ensures the renderer treats it as "in-viewport" content.
+        {/* 
+            STRATEGY: OVERLAY RENDER FOR DOWNLOAD
+            Instead of a hidden ghost element, we use a full-screen overlay that renders ONLY when downloading.
+            This ensures the browser fully renders the layout at 1:1 scale in the viewport,
+            preventing distortion from scroll offsets or CSS transforms.
         */}
-        <div 
-          style={{ 
-            position: 'fixed', 
-            left: '50%', 
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: ASPECT_RATIOS[postData.format].width, 
-            height: ASPECT_RATIOS[postData.format].height,
-            overflow: 'hidden',
-            opacity: 0, // Invisible but rendered
-            zIndex: -50, // Behind everything
-            pointerEvents: 'none'
-          }}
-        >
-          <CanvasRenderer data={postData} id="ghost-canvas-download" />
-        </div>
+        {showDownloadCanvas && (
+          <div className="fixed inset-0 z-[9999] bg-slate-900 flex items-center justify-center overflow-auto animate-in fade-in duration-300">
+             <div className="flex flex-col items-center gap-4 text-white">
+                <Loader2 className="animate-spin w-12 h-12 text-orange-500" />
+                <p className="font-bold text-lg animate-pulse">Renderizando imagem em Alta Definição...</p>
+                <p className="text-sm opacity-60">Aguarde, isso garante a melhor qualidade.</p>
+                
+                {/* The Actual Canvas to Capture - Rendered at Full Scale */}
+                <div className="mt-8 border border-white/20 shadow-2xl overflow-hidden relative">
+                   <CanvasRenderer data={postData} id="final-canvas-export" />
+                </div>
+             </div>
+          </div>
+        )}
 
         {/* Info Footer */}
         <div className="bg-gray-900 text-gray-400 text-[10px] py-1 px-4 text-center w-full z-20 shrink-0 border-t border-gray-700">
