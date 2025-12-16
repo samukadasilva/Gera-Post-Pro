@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // ATENÇÃO: Substitua os valores abaixo pelas configurações do seu projeto no Firebase Console
 // Vá em: Console -> Configurações do Projeto -> Geral -> Apps -> Web App
@@ -15,8 +16,9 @@ const firebaseConfig = {
 // Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Exporta os serviços de autenticação
+// Exporta os serviços
 export const auth = getAuth(app);
+export const db = getFirestore(app); // Banco de dados
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
 

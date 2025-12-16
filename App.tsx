@@ -16,10 +16,24 @@ import {
   CreditCard, 
   Settings,
   X,
-  Loader2
+  Loader2,
+  Cloud,
+  CloudOff,
+  Mail,
+  ArrowRight,
+  Star
 } from 'lucide-react';
-import { auth, googleProvider, facebookProvider } from './firebase';
-import { signInWithPopup, signOut, updateProfile, User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
+import { auth, googleProvider, facebookProvider, db } from './firebase';
+import { 
+  signInWithPopup, 
+  signOut, 
+  updateProfile, 
+  User as FirebaseUser, 
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 declare const html2canvas: any;
 
@@ -55,9 +69,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, isOpen, onClo
   };
 
   const handleManageSubscription = () => {
-    // Aqui você redirecionaria para o portal do cliente Stripe ou similar
     alert("Redirecionando para o portal de pagamentos...");
-    // window.location.href = "SEU_LINK_DO_STRIPE_CUSTOMER_PORTAL";
   };
 
   return (
@@ -73,7 +85,6 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, isOpen, onClo
         </div>
         
         <div className="p-6 space-y-6">
-          {/* Avatar Section */}
           <div className="flex flex-col items-center justify-center -mt-12 mb-4">
              <div className="w-20 h-20 rounded-full border-4 border-white bg-slate-200 overflow-hidden shadow-lg">
                {user.photoURL ? (
@@ -87,7 +98,6 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, isOpen, onClo
              <span className="text-xs text-slate-500 mt-2 font-mono">{user.uid.slice(0, 8)}...</span>
           </div>
 
-          {/* Form */}
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1">Nome Completo</label>
@@ -109,7 +119,6 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, isOpen, onClo
             </div>
           </div>
 
-          {/* Subscription Status */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
              <div>
                <p className="text-xs text-green-800 font-bold uppercase tracking-wide">Status da Assinatura</p>
@@ -149,54 +158,94 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, isOpen, onClo
 };
 
 // --- Auth Component ---
-const AuthOverlay = ({ onLoginGoogle, onLoginFacebook }: { onLoginGoogle: () => void, onLoginFacebook: () => void }) => {
+const AuthOverlay = ({ 
+  onLoginGoogle, 
+  onLoginFacebook,
+  onGuestAccess
+}: { 
+  onLoginGoogle: () => void, 
+  onLoginFacebook: () => void,
+  onGuestAccess: () => void
+}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+
+  const handleEmailAuth = async () => {
+    if (!email || !password) {
+      alert("Preencha e-mail e senha.");
+      return;
+    }
+
+    setLoadingEmail(true);
+    try {
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (error: any) {
+      console.error("Auth Error", error);
+      let msg = "Erro na autenticação.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') msg = "E-mail ou senha incorretos.";
+      if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já está cadastrado.";
+      if (error.code === 'auth/weak-password') msg = "A senha deve ter pelo menos 6 caracteres.";
+      alert(msg);
+    } finally {
+      setLoadingEmail(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-white/10">
-        <div className="bg-gradient-to-br from-slate-800 to-black p-8 text-center text-white relative overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-white/10 my-8">
+        <div className="bg-gradient-to-br from-slate-800 to-black p-6 text-center text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
-             <Crown size={120} />
+             <Crown size={100} />
           </div>
-          <div className="inline-flex items-center justify-center p-3 bg-orange-500 rounded-full mb-4 shadow-lg ring-4 ring-orange-500/30">
-             <Lock size={32} strokeWidth={2.5} />
+          <div className="inline-flex items-center justify-center p-3 bg-orange-500 rounded-full mb-3 shadow-lg ring-4 ring-orange-500/30">
+             <Lock size={24} strokeWidth={2.5} />
           </div>
-          <h1 className="text-3xl font-black mb-2 tracking-tight">Gera Post Pro</h1>
-          <p className="opacity-90 font-medium text-slate-300">Faça login para desbloquear acesso ilimitado</p>
+          <h1 className="text-2xl font-black mb-1 tracking-tight">Gera Post Pro</h1>
+          <p className="opacity-90 text-sm font-medium text-slate-300">Acesse para desbloquear recursos</p>
         </div>
         
-        <div className="p-8">
-           <div className="space-y-4 mb-8">
-              <div className="flex items-start gap-4 text-slate-700">
-                <div className="bg-green-100 p-1.5 rounded-full text-green-600 mt-0.5"><Check size={16} strokeWidth={4} /></div>
+        <div className="p-6">
+           <div className="space-y-3 mb-6">
+              {/* Feature 1 */}
+              <div className="flex items-start gap-3 text-slate-700">
+                <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
                 <div>
-                  <span className="font-bold block text-slate-900">Salvar Configurações</span>
-                  <span className="text-xs text-slate-500">Sua logo, cores e fontes ficam salvas na nuvem.</span>
+                  <span className="font-bold block text-sm text-slate-900">Salvar Configurações</span>
+                  <span className="text-[10px] text-slate-500">Sua logo, cores e fontes ficam salvas na nuvem.</span>
                 </div>
               </div>
-              <div className="flex items-start gap-4 text-slate-700">
-                <div className="bg-green-100 p-1.5 rounded-full text-green-600 mt-0.5"><Check size={16} strokeWidth={4} /></div>
+              {/* Feature 2 */}
+              <div className="flex items-start gap-3 text-slate-700">
+                <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
                 <div>
-                   <span className="font-bold block text-slate-900">9 Modelos Premium</span>
-                   <span className="text-xs text-slate-500">Acesso total a todos os templates (Feed e Story).</span>
+                   <span className="font-bold block text-sm text-slate-900">9 Modelos Premium</span>
+                   <span className="text-[10px] text-slate-500">Acesso total a todos os templates.</span>
                 </div>
               </div>
            </div>
 
-           <div className="space-y-3">
+           {/* Social Login */}
+           <div className="space-y-2 mb-6">
              <button 
                onClick={onLoginFacebook}
-               className="w-full bg-[#1877F2] text-white font-bold py-3 rounded-lg hover:bg-[#166fe5] transition-all flex items-center justify-center gap-3 shadow-md"
+               className="w-full bg-[#1877F2] text-white font-bold py-2.5 rounded-lg hover:bg-[#166fe5] transition-all flex items-center justify-center gap-2 shadow-md text-sm"
              >
-               <Facebook size={20} fill="currentColor" />
+               <Facebook size={18} fill="currentColor" />
                Entrar com Facebook
              </button>
 
              <button 
                onClick={onLoginGoogle}
-               className="w-full bg-white text-slate-700 border border-slate-300 font-bold py-3 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-3 shadow-sm"
+               className="w-full bg-white text-slate-700 border border-slate-300 font-bold py-2.5 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
              >
-               {/* Google SVG Icon */}
-               <svg className="w-5 h-5" viewBox="0 0 24 24">
+               <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -204,6 +253,73 @@ const AuthOverlay = ({ onLoginGoogle, onLoginFacebook }: { onLoginGoogle: () => 
                </svg>
                Entrar com Google
              </button>
+           </div>
+
+           <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-400">Ou use seu e-mail</span></div>
+           </div>
+
+           {/* Email Login */}
+           <div className="space-y-3">
+              <div>
+                <input 
+                  type="email" 
+                  placeholder="Seu e-mail"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"
+                />
+              </div>
+              <div>
+                <input 
+                  type="password" 
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"
+                />
+              </div>
+              <button 
+                onClick={handleEmailAuth}
+                disabled={loadingEmail}
+                className="w-full bg-slate-800 text-white font-bold py-2.5 rounded-lg hover:bg-slate-900 transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
+              >
+                {loadingEmail ? <Loader2 className="animate-spin" size={16} /> : (isRegistering ? <User size={16} /> : <Mail size={16} />)}
+                {isRegistering ? 'Cadastrar Conta' : 'Entrar com E-mail'}
+              </button>
+              
+              <div className="text-center">
+                 <button 
+                   onClick={() => setIsRegistering(!isRegistering)}
+                   className="text-xs text-slate-500 hover:text-orange-600 underline"
+                 >
+                   {isRegistering ? 'Já tenho conta? Fazer login' : 'Não tem conta? Cadastre-se grátis'}
+                 </button>
+              </div>
+           </div>
+
+           {/* PRICING BANNER */}
+           <div className="mt-6 p-3 bg-orange-50 border border-orange-200 rounded-xl flex flex-col items-center justify-center text-center">
+              <div className="flex items-center gap-1.5 text-orange-800 font-bold text-xs uppercase tracking-wider mb-0.5">
+                 <Star size={12} fill="currentColor" /> Oferta Especial
+              </div>
+              <div className="text-slate-900 font-medium text-sm">
+                 Tenha o <span className="font-black text-orange-600">Plano Pro</span> por apenas
+              </div>
+              <div className="text-2xl font-black text-slate-800 tracking-tight">
+                 R$ 15,00
+              </div>
+           </div>
+
+           {/* Guest Mode */}
+           <div className="mt-4 pt-4 border-t border-dashed border-gray-200 text-center">
+              <button 
+                onClick={onGuestAccess}
+                className="text-sm font-bold text-gray-400 hover:text-gray-600 flex items-center justify-center gap-1 mx-auto transition-colors group"
+              >
+                Entrar sem login (Modo Teste) <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </button>
            </div>
         </div>
       </div>
@@ -221,49 +337,135 @@ const App: React.FC = () => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // New State for Guest Mode
+  const [isGuestMode, setIsGuestMode] = useState(false);
 
   const previewWrapperRef = useRef<HTMLDivElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Auth & Data Persistence Logic ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      
+      if (currentUser) {
+        setIsGuestMode(false); // Disable guest mode if user logs in
+        // User logged in: Fetch from Firestore
+        try {
+          const docRef = doc(db, "users", currentUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const savedData = docSnap.data().postData;
+            // Merge with initial to ensure structure validity
+            setPostData(prev => ({ ...prev, ...savedData }));
+          } else {
+             // If new user in DB, check if they have local storage data to migrate
+             const localData = localStorage.getItem('geraPostData');
+             if (localData) {
+               try {
+                 const parsed = JSON.parse(localData);
+                 setPostData(prev => ({ ...prev, ...parsed }));
+               } catch (e) {
+                 console.error("Error migrating local data", e);
+               }
+             }
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      } else {
+        // User logged out: Load Local Data
+        const savedData = localStorage.getItem('geraPostData');
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            setPostData(prev => ({ ...prev, ...parsed }));
+          } catch (e) {
+            console.error("Error loading saved data", e);
+          }
+        } else {
+            setPostData(INITIAL_POST_DATA);
+        }
+      }
+      
       setLoadingAuth(false);
     });
-
-    // Load Local Data (Still useful for quick recovery)
-    const savedData = localStorage.getItem('geraPostData');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setPostData(prev => ({
-           ...prev,
-           ...parsed,
-           logo: { ...prev.logo, ...parsed.logo }
-        }));
-      } catch (e) {
-        console.error("Error loading saved data", e);
-      }
-    }
 
     return () => unsubscribe();
   }, []);
 
+  // --- Save Logic (Firestore vs LocalStorage) ---
+  const handleUpdateData = useCallback((partial: Partial<PostData>) => {
+    setPostData(prev => {
+      const newData = { ...prev, ...partial };
+      
+      // Debounce saving to prevent too many writes/operations
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(async () => {
+        if (auth.currentUser) {
+           // Save to Cloud (Firestore)
+           setIsSaving(true);
+           try {
+              const userRef = doc(db, "users", auth.currentUser.uid);
+              await setDoc(userRef, { postData: newData }, { merge: true });
+           } catch (err) {
+              console.error("Error saving to cloud", err);
+           } finally {
+              setIsSaving(false);
+           }
+        } else {
+           // Save to Browser (LocalStorage)
+           localStorage.setItem('geraPostData', JSON.stringify(newData));
+        }
+      }, 1500); // Wait 1.5s after last change
+
+      return newData;
+    });
+  }, []);
+
   const handleGoogleLogin = async () => {
+    // Check if configuration is still default
+    if (auth.app.options.apiKey === "SUA_API_KEY_AQUI") {
+       alert("ATENÇÃO: Você precisa configurar o arquivo 'firebase.ts' com suas chaves do Firebase Console para o login funcionar.");
+       return;
+    }
+
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Google Failed", error);
-      alert("Erro ao fazer login com Google. Verifique o console ou as configurações do Firebase.");
+      if (error.code === 'auth/configuration-not-found' || error.code === 'auth/api-key-not-valid') {
+        alert("Erro de Configuração: Verifique suas chaves de API no arquivo firebase.ts e se a Autenticação Google está ativada no Firebase Console.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        // Ignore user closing popup
+      } else {
+        alert(`Erro ao entrar: ${error.message}`);
+      }
     }
   };
 
   const handleFacebookLogin = async () => {
+     // Check if configuration is still default
+    if (auth.app.options.apiKey === "SUA_API_KEY_AQUI") {
+       alert("ATENÇÃO: Você precisa configurar o arquivo 'firebase.ts' com suas chaves do Firebase Console para o login funcionar.");
+       return;
+    }
+
     try {
       await signInWithPopup(auth, facebookProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Facebook Failed", error);
-      alert("Erro ao fazer login com Facebook. Verifique as configurações.");
+       if (error.code === 'auth/configuration-not-found') {
+        alert("Erro de Configuração: Verifique suas chaves de API e se o Login Facebook está ativado no Firebase Console.");
+      } else {
+        alert("Erro ao fazer login com Facebook. Verifique as configurações.");
+      }
     }
   };
 
@@ -271,18 +473,12 @@ const App: React.FC = () => {
     try {
       setIsProfileOpen(false);
       await signOut(auth);
+      setPostData(INITIAL_POST_DATA); // Reset to default on logout
+      setIsGuestMode(false); // Reset guest mode so login appears again
     } catch (error) {
       console.error("Logout Failed", error);
     }
   };
-
-  const handleUpdateData = useCallback((partial: Partial<PostData>) => {
-    setPostData(prev => {
-      const newData = { ...prev, ...partial };
-      localStorage.setItem('geraPostData', JSON.stringify(newData));
-      return newData;
-    });
-  }, []);
 
   // Auto-fit preview logic
   useEffect(() => {
@@ -354,10 +550,12 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col md:flex-row h-screen w-full overflow-hidden bg-gray-100 font-sans">
       
-      {!user && (
+      {/* Show Auth Overlay if NOT user AND NOT guest mode */}
+      {!user && !isGuestMode && (
         <AuthOverlay 
           onLoginGoogle={handleGoogleLogin} 
-          onLoginFacebook={handleFacebookLogin} 
+          onLoginFacebook={handleFacebookLogin}
+          onGuestAccess={() => setIsGuestMode(true)}
         />
       )}
 
@@ -407,6 +605,23 @@ const App: React.FC = () => {
            </div>
            
            <div className="flex items-center gap-4">
+              {/* Cloud Save Indicator */}
+              {user && (
+                <div className="hidden md:flex items-center gap-1.5 text-[10px] font-medium transition-colors text-gray-400">
+                   {isSaving ? (
+                     <>
+                       <Loader2 className="animate-spin text-orange-500" size={14} />
+                       <span className="text-orange-500">Salvando...</span>
+                     </>
+                   ) : (
+                     <>
+                       <Cloud size={14} className="text-green-500" />
+                       <span className="text-gray-300">Sincronizado</span>
+                     </>
+                   )}
+                </div>
+              )}
+
               {/* Authenticated User Profile Trigger */}
               {user ? (
                  <button 
@@ -426,7 +641,13 @@ const App: React.FC = () => {
                  </button>
               ) : (
                 <div className="hidden sm:flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 opacity-50">
-                  <span className="text-[10px] text-gray-300 font-medium">Visitante</span>
+                   <CloudOff size={12} className="text-gray-400" />
+                   <span className="text-[10px] text-gray-300 font-medium">Modo Local (Visitante)</span>
+                   {isGuestMode && (
+                     <button onClick={() => setIsGuestMode(false)} className="bg-slate-700 hover:bg-slate-600 text-white px-2 py-0.5 rounded text-[9px] ml-1">
+                        Fazer Login
+                     </button>
+                   )}
                 </div>
               )}
            </div>
@@ -471,8 +692,8 @@ const App: React.FC = () => {
         </div>
 
         {/* Info Footer */}
-        <div className="bg-gray-900 text-gray-500 text-[9px] py-1 px-4 text-center w-full z-20 shrink-0 border-t border-gray-700">
-           Programa desenvolvido pela empresa <strong className="text-gray-300">NC Assessoria & Marketing</strong>
+        <div className="bg-gray-900 text-gray-400 text-[10px] py-1 px-4 text-center w-full z-20 shrink-0 border-t border-gray-700">
+           Programa desenvolvido pela empresa <strong className="text-gray-200">NC Assessoria & Marketing</strong>
         </div>
       </div>
 
