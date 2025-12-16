@@ -21,7 +21,8 @@ import {
   CloudOff,
   Mail,
   ArrowRight,
-  Star
+  Star,
+  Image as ImageIcon
 } from 'lucide-react';
 import { auth, googleProvider, facebookProvider, db } from './firebase';
 import { 
@@ -227,7 +228,15 @@ const AuthOverlay = ({
                   <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
                   <div>
                     <span className="font-bold block text-sm text-slate-900">9 Modelos Premium</span>
-                    <span className="text-[10px] text-slate-500">Acesso total a todos os templates.</span>
+                    <span className="text-[10px] text-slate-500">Acesso total a todos os templates e estilos.</span>
+                  </div>
+                </div>
+                {/* Feature 3 (Added) */}
+                <div className="flex items-start gap-3 text-slate-700">
+                  <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
+                  <div>
+                    <span className="font-bold block text-sm text-slate-900">Exportação em HD</span>
+                    <span className="text-[10px] text-slate-500">Baixe suas artes em alta resolução (PNG) sem distorção.</span>
                   </div>
                 </div>
             </div>
@@ -522,16 +531,21 @@ const App: React.FC = () => {
       // Allow the DOM to settle
       await new Promise(resolve => setTimeout(resolve, 100));
 
+      // Get accurate dimensions for the format
+      const { width, height } = ASPECT_RATIOS[postData.format];
+
       const canvas = await html2canvas(element, {
-        scale: 3, // Increased scale for high resolution
+        scale: 2, // High resolution (2x)
+        width: width,
+        height: height,
         useCORS: true, 
         allowTaint: false,
         backgroundColor: null,
         logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight
+        windowWidth: width, // Important: force window size context to match image
+        windowHeight: height,
+        x: 0,
+        y: 0
       });
 
       const link = document.createElement('a');
@@ -685,19 +699,22 @@ const App: React.FC = () => {
         </div>
 
         {/* Ghost Renderer for Download 
-            MOVED to top/left 0 with z-index -50 to ensure proper rendering context 
-            while staying hidden. -10000px causes rendering clipping in some browsers.
+            STRATEGY CHANGE: 
+            Instead of negative coordinates (which cause issues on some renderers),
+            we position it fixed in the center but completely invisible via opacity/z-index.
+            This ensures the renderer treats it as "in-viewport" content.
         */}
         <div 
           style={{ 
             position: 'fixed', 
-            left: 0, 
-            top: 0, 
+            left: '50%', 
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
             width: ASPECT_RATIOS[postData.format].width, 
             height: ASPECT_RATIOS[postData.format].height,
             overflow: 'hidden',
-            visibility: 'visible', // Must be visible for html2canvas
-            zIndex: -50, // Behind the main app background
+            opacity: 0, // Invisible but rendered
+            zIndex: -50, // Behind everything
             pointerEvents: 'none'
           }}
         >
