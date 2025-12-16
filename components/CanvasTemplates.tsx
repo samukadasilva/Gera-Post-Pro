@@ -19,6 +19,7 @@ const BrandLogo = ({ data }: { data: PostData }) => {
     <img
       src={data.logo.url}
       alt="Logo"
+      crossOrigin="anonymous"
       className="absolute z-30 object-contain pointer-events-none drop-shadow-md select-none"
       style={{
         left: `${data.logo.x}%`,
@@ -76,10 +77,13 @@ const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, 
 const Template1 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full flex flex-col bg-white relative">
-      <div 
-        className="h-[60%] w-full bg-cover bg-center relative"
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      >
+      <div className="h-[60%] w-full relative overflow-hidden">
+        <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
          <BrandLogo data={data} />
          <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-black/50 to-transparent" />
       </div>
@@ -112,10 +116,12 @@ const Template1 = ({ data }: { data: PostData }) => {
 const Template2 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900">
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      />
+       <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover"
+       />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent opacity-95" />
       
       <BrandLogo data={data} />
@@ -147,10 +153,12 @@ const Template3 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative overflow-hidden">
        {/* Background Image */}
-       <div 
-        className="absolute inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      />
+       <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+       />
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-slate-900/40 z-0" />
       
@@ -192,10 +200,12 @@ const Template3 = ({ data }: { data: PostData }) => {
 const Template4 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-black">
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      />
+      <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover"
+       />
       
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
@@ -242,10 +252,13 @@ const Template5 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full flex flex-col bg-white relative">
       {/* Top Image Section */}
-      <div 
-        className={`w-full bg-cover bg-center relative ${isSt ? 'h-[55%]' : 'h-[60%]'}`}
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      >
+      <div className={`w-full relative overflow-hidden ${isSt ? 'h-[55%]' : 'h-[60%]'}`}>
+        <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         {/* Subtle gradient at bottom of image to help transition */}
         <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/40 to-transparent" />
         <BrandLogo data={data} />
@@ -291,10 +304,12 @@ const Template5 = ({ data }: { data: PostData }) => {
 const Template6 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900">
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      />
+      <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover"
+       />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/30" />
       
       <BrandLogo data={data} />
@@ -341,7 +356,12 @@ const Template7 = ({ data }: { data: PostData }) => {
   
   return (
     <div className="w-full h-full relative bg-slate-900 font-sans">
-       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${data.imageUrl})` }} />
+       <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover"
+       />
        {/* Strong gradient at bottom for text contrast */}
        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
        
@@ -390,7 +410,12 @@ const Template7 = ({ data }: { data: PostData }) => {
 const Template8 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900 overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url(${data.imageUrl})` }} />
+      <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+       />
       {/* Smooth Gradient */}
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/70 to-transparent" />
       <BrandLogo data={data} />
@@ -429,10 +454,12 @@ const Template8 = ({ data }: { data: PostData }) => {
 const Template9 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900">
-      <div 
-        className="absolute inset-0 bg-cover bg-center grayscale-[50%]"
-        style={{ backgroundImage: `url(${data.imageUrl})` }}
-      />
+      <img 
+          src={data.imageUrl} 
+          alt="Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover grayscale-[50%]"
+       />
       
       {/* Strong Brand Gradient Overlay */}
       <div 

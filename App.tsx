@@ -519,12 +519,18 @@ const App: React.FC = () => {
     setIsDownloading(true);
 
     try {
+      // Allow the DOM to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(element, {
         scale: 1, 
         useCORS: true, 
-        allowTaint: true,
+        // IMPORTANT: allowTaint must be false (default) if we want to call toDataURL().
+        // If it is true, the canvas is "tainted" by cross-origin images and toDataURL throws a security error.
+        // We rely on useCORS and crossOrigin="anonymous" on img tags instead.
+        allowTaint: false,
         backgroundColor: null,
-        logging: false,
+        logging: true,
       });
 
       const link = document.createElement('a');
@@ -535,7 +541,7 @@ const App: React.FC = () => {
       link.click();
     } catch (error) {
       console.error("Error generating image:", error);
-      alert("Erro ao gerar imagem. Verifique se a imagem de fundo permite acesso externo (CORS).");
+      alert("Erro ao baixar a imagem. Se você estiver usando uma imagem externa (não enviada por upload), o site de origem pode estar bloqueando o download.");
     } finally {
       setIsDownloading(false);
     }
@@ -675,6 +681,22 @@ const App: React.FC = () => {
           >
              <CanvasRenderer data={postData} id="canvas-preview" />
           </div>
+        </div>
+
+        {/* Ghost Renderer for Download */}
+        <div 
+          style={{ 
+            position: 'fixed', 
+            left: '-10000px', 
+            top: '0', 
+            width: ASPECT_RATIOS[postData.format].width, 
+            height: ASPECT_RATIOS[postData.format].height,
+            overflow: 'hidden',
+            visibility: 'visible',
+            zIndex: -50
+          }}
+        >
+          <CanvasRenderer data={postData} id="ghost-canvas-download" />
         </div>
 
         {/* Info Footer */}
