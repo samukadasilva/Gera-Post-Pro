@@ -172,6 +172,7 @@ const AuthOverlay = ({
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   const handleEmailAuth = async () => {
     if (!email || !password) {
@@ -200,8 +201,10 @@ const AuthOverlay = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm animate-in fade-in duration-500 overflow-y-auto">
-      <div className="min-h-full flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-white/10 relative">
+      <div className="min-h-full flex flex-col items-center justify-center p-4">
+        
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-white/10 relative mb-8">
           <div className="bg-gradient-to-br from-slate-800 to-black p-8 text-center text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <Crown size={100} />
@@ -215,7 +218,6 @@ const AuthOverlay = ({
           
           <div className="p-6">
             <div className="space-y-3 mb-6">
-                {/* Feature 1 */}
                 <div className="flex items-start gap-3 text-slate-700">
                   <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
                   <div>
@@ -223,7 +225,6 @@ const AuthOverlay = ({
                     <span className="text-[10px] text-slate-500">Sua logo, cores e fontes ficam salvas na nuvem.</span>
                   </div>
                 </div>
-                {/* Feature 2 */}
                 <div className="flex items-start gap-3 text-slate-700">
                   <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
                   <div>
@@ -231,7 +232,6 @@ const AuthOverlay = ({
                     <span className="text-[10px] text-slate-500">Acesso total a todos os templates e estilos.</span>
                   </div>
                 </div>
-                {/* Feature 3 (Added) */}
                 <div className="flex items-start gap-3 text-slate-700">
                   <div className="bg-green-100 p-1 rounded-full text-green-600 mt-0.5"><Check size={14} strokeWidth={4} /></div>
                   <div>
@@ -333,6 +333,14 @@ const AuthOverlay = ({
             </div>
           </div>
         </div>
+
+        {/* --- FIXED FOOTER WITH COMPANY NAME --- */}
+        <div className="text-gray-500 text-[11px] font-medium flex items-center gap-1 opacity-70 mt-2">
+            <span>&copy; {currentYear}</span>
+            <span>Programa desenvolvido pela empresa</span>
+            <strong className="text-gray-300">NC Assessoria & Marketing</strong>
+        </div>
+
       </div>
     </div>
   );
@@ -520,7 +528,7 @@ const App: React.FC = () => {
 
   const handleDownload = async () => {
     setIsDownloading(true);
-    // 1. Activate the full-screen overlay for rendering
+    // 1. Activate the hidden rendering process
     setShowDownloadCanvas(true);
 
     try {
@@ -534,9 +542,6 @@ const App: React.FC = () => {
         throw new Error("Elemento de renderização não encontrado");
       }
 
-      // 3. Scroll to top to avoid offset bugs
-      window.scrollTo(0, 0);
-
       // Get accurate dimensions for the format
       const { width, height } = ASPECT_RATIOS[postData.format];
 
@@ -545,15 +550,34 @@ const App: React.FC = () => {
         width: width,
         height: height,
         useCORS: true, 
-        allowTaint: true, // Allow tainted canvas, though toDataURL might fail if strict CORS, Base64 fixes this.
+        allowTaint: true, 
         backgroundColor: null,
         logging: false,
+        // Critical: Set scroll to 0 to avoid offsets, even if element is off-screen
         scrollX: 0,
         scrollY: 0,
         windowWidth: width,
         windowHeight: height,
         x: 0,
         y: 0,
+        // Critical Fix: Force font consistency during capture
+        onclone: (clonedDoc: Document) => {
+            const el = clonedDoc.getElementById('final-canvas-export');
+            if(el) {
+                // Force explicit geometric precision to avoid text shifting
+                el.style.textRendering = 'geometricPrecision';
+                el.style.fontVariant = 'normal';
+                el.style.setProperty('-webkit-font-smoothing', 'antialiased');
+                
+                // FORCE Footer elements to NEVER wrap
+                const footers = el.querySelectorAll('[data-footer-item]');
+                footers.forEach((f: any) => {
+                   f.style.whiteSpace = 'nowrap';
+                   f.style.display = 'flex';
+                   f.style.alignItems = 'center';
+                });
+            }
+        },
         ignoreElements: (element: any) => false, // Capture everything
       });
 
@@ -711,29 +735,29 @@ const App: React.FC = () => {
         </div>
 
         {/* 
-            STRATEGY: OVERLAY RENDER FOR DOWNLOAD
-            This ensures the browser fully renders the layout at 1:1 scale in the viewport,
-            preventing distortion from scroll offsets or CSS transforms.
+            STRATEGY: HIDDEN RENDER + LOADING OVERLAY
+            1. We show a nice loading spinner in center of screen.
+            2. We render the ACTUAL canvas off-screen (-10000px left).
+            This prevents the "Flash of Huge Content" while ensuring html2canvas has a real DOM element to capture.
         */}
-        {showDownloadCanvas && (
-          <div className="fixed inset-0 z-[9999] bg-slate-900 flex items-center justify-center overflow-auto animate-in fade-in duration-300">
-             <div className="flex flex-col items-center gap-4 text-white">
-                <Loader2 className="animate-spin w-12 h-12 text-orange-500" />
-                <p className="font-bold text-lg animate-pulse">Renderizando imagem em Alta Definição...</p>
-                <p className="text-sm opacity-60">Aguarde, isso garante a melhor qualidade.</p>
-                
-                {/* The Actual Canvas to Capture - Rendered at Full Scale */}
-                <div className="mt-8 border border-white/20 shadow-2xl overflow-hidden relative">
-                   <CanvasRenderer data={postData} id="final-canvas-export" />
-                </div>
-             </div>
+        {isDownloading && (
+          <div className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center text-white animate-in fade-in duration-300">
+                <Loader2 className="animate-spin w-12 h-12 text-orange-500 mb-4" />
+                <p className="font-bold text-lg animate-pulse">Gerando imagem em Alta Definição...</p>
+                <p className="text-sm opacity-60 mt-1">Aguarde, processando pixels.</p>
           </div>
         )}
 
-        {/* Info Footer */}
-        <div className="bg-gray-900 text-gray-400 text-[10px] py-1 px-4 text-center w-full z-20 shrink-0 border-t border-gray-700">
-           Programa desenvolvido pela empresa <strong className="text-gray-200">NC Assessoria & Marketing</strong>
-        </div>
+        {/* 
+            OFF-SCREEN RENDER AREA 
+            Kept in DOM for html2canvas to find, but invisible to user.
+        */}
+        {showDownloadCanvas && (
+          <div style={{ position: 'fixed', left: '-10000px', top: 0, overflow: 'hidden' }}>
+             <CanvasRenderer data={postData} id="final-canvas-export" />
+          </div>
+        )}
+
       </div>
 
     </div>

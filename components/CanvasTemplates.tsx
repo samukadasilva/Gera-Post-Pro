@@ -35,8 +35,9 @@ const BrandLogo = ({ data }: { data: PostData }) => {
 const CategoryTag = ({ data, className = "", style = {} }: { data: PostData, className?: string, style?: React.CSSProperties }) => {
   if (!data.showCategory || !data.category) return null;
   return (
+    // Changed to inline-flex to center text perfectly in the box during HTML2Canvas export
     <span 
-      className={`inline-block px-6 py-3 text-white text-[1.6rem] font-bold uppercase tracking-widest shadow-md ${className}`}
+      className={`inline-flex items-center justify-center px-6 py-3 text-white text-[1.6rem] font-bold uppercase tracking-widest shadow-md whitespace-nowrap leading-none ${className}`}
       style={{ backgroundColor: data.categoryBgColor, ...style }}
     >
       {data.category}
@@ -53,20 +54,27 @@ const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, 
   return (
     <div className={`flex items-center w-full mt-auto pt-6 border-t-2 ${borderColor} ${justifyClass}`}>
       {data.showInsta && (
-        <div className={`flex items-center gap-2 font-bold text-xl ${textColor}`}>
+        <div 
+          className={`flex items-center gap-2 font-bold text-xl ${textColor}`}
+          data-footer-item="true" // Marker for onclone script
+        >
           <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
              <Instagram size={18} className={iconColor} />
           </div>
-          <span className="leading-none">{data.instagram}</span>
+          {/* whitespace-nowrap prevents the text from dropping below the icon */}
+          <span className="leading-none whitespace-nowrap pb-0.5">{data.instagram}</span>
         </div>
       )}
       
       {data.showUrl && (
-        <div className={`flex items-center gap-2 font-semibold text-lg opacity-90 ${textColor} ${center ? '' : 'ml-auto'}`}>
+        <div 
+          className={`flex items-center gap-2 font-semibold text-lg opacity-90 ${textColor} ${center ? '' : 'ml-auto'}`}
+          data-footer-item="true"
+        >
           <div className="w-8 h-8 flex items-center justify-center shrink-0">
              <Globe size={22} />
           </div>
-          <span className="leading-none">{data.siteUrl}</span>
+          <span className="leading-none whitespace-nowrap pb-0.5">{data.siteUrl}</span>
         </div>
       )}
     </div>
@@ -101,7 +109,8 @@ const Template1 = ({ data }: { data: PostData }) => {
              {data.headline}
            </h1>
            {data.subtitle && (
-             <p className="text-[1.7rem] text-slate-500 leading-snug line-clamp-4">
+             // Increased line-height slightly to prevent cutoff at bottom of letters
+             <p className="text-[1.7rem] text-slate-500 leading-[1.3] line-clamp-4">
                {data.subtitle}
              </p>
            )}
@@ -136,7 +145,7 @@ const Template2 = ({ data }: { data: PostData }) => {
               {data.headline}
             </h1>
             {data.subtitle && (
-              <p className="text-[1.9rem] text-slate-200 font-medium leading-normal mb-10 border-l-[8px] pl-6 border-white/30">
+              <p className="text-[1.9rem] text-slate-200 font-medium leading-[1.3] mb-10 border-l-[8px] pl-6 border-white/30">
                 {data.subtitle}
               </p>
             )}
@@ -180,7 +189,7 @@ const Template3 = ({ data }: { data: PostData }) => {
              {data.headline}
            </h1>
            {data.subtitle && (
-             <p className="text-[1.6rem] text-slate-600 leading-snug mb-6">
+             <p className="text-[1.6rem] text-slate-600 leading-[1.3] mb-6">
                {data.subtitle}
              </p>
            )}
@@ -224,7 +233,7 @@ const Template4 = ({ data }: { data: PostData }) => {
             
             {data.subtitle && (
                <div className="relative pl-6 mb-8 border-l-4" style={{ borderColor: data.themeColor }}>
-                  <p className="text-[1.8rem] text-slate-100 font-medium leading-snug" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+                  <p className="text-[1.8rem] text-slate-100 font-medium leading-[1.3]" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
                     {data.subtitle}
                   </p>
                </div>
@@ -262,7 +271,7 @@ const Template5 = ({ data }: { data: PostData }) => {
          {/* Floating Badge - Overlaps the seam */}
          <div className="absolute -top-7 left-10 z-10">
             <span 
-              className="inline-block px-8 py-4 text-white text-[1.8rem] font-bold uppercase tracking-widest shadow-lg"
+              className="inline-flex items-center justify-center px-8 py-4 text-white text-[1.8rem] font-bold uppercase tracking-widest shadow-lg leading-none"
               style={{ backgroundColor: data.categoryBgColor }} 
             >
               {data.category}
@@ -277,7 +286,7 @@ const Template5 = ({ data }: { data: PostData }) => {
             
             {data.subtitle && (
                <div className="flex-1 relative">
-                  <p className="text-[1.7rem] text-slate-600 leading-snug font-light">
+                  <p className="text-[1.7rem] text-slate-600 leading-[1.3] font-light">
                     {data.subtitle}
                   </p>
                </div>
@@ -321,7 +330,7 @@ const Template6 = ({ data }: { data: PostData }) => {
          {data.subtitle && (
            <div className="max-w-[95%] mb-10">
              <p 
-                className="text-[1.9rem] text-slate-200 leading-snug font-medium"
+                className="text-[1.9rem] text-slate-200 leading-[1.3] font-medium"
                 style={{ textShadow: '0 2px 15px rgba(0,0,0,0.8)' }}
              >
                {data.subtitle}
@@ -360,7 +369,7 @@ const Template7 = ({ data }: { data: PostData }) => {
        <div className={`absolute left-0 w-full flex flex-col px-10 ${isSt ? 'bottom-80' : 'bottom-40'}`}>
           <div className="mb-4">
              <span 
-               className="inline-block py-2 px-5 text-white text-[1.4rem] font-bold uppercase tracking-wider shadow-lg rounded-sm"
+               className="inline-flex items-center justify-center py-2 px-5 text-white text-[1.4rem] font-bold uppercase tracking-wider shadow-lg rounded-sm leading-none"
                style={{ backgroundColor: data.categoryBgColor }}
              >
                {data.category}
@@ -373,7 +382,7 @@ const Template7 = ({ data }: { data: PostData }) => {
 
           {data.subtitle && (
              <div className="pl-6 border-l-4 border-white/40">
-               <p className="text-[1.7rem] text-gray-100 leading-snug font-medium drop-shadow-lg">
+               <p className="text-[1.7rem] text-gray-100 leading-[1.3] font-medium drop-shadow-lg">
                  {data.subtitle}
                </p>
              </div>
@@ -410,7 +419,7 @@ const Template8 = ({ data }: { data: PostData }) => {
          {/* Dot & Category */}
          <div className="mb-6 flex items-center gap-4">
              <div className="w-4 h-4 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)] ring-2 ring-white/20" style={{backgroundColor: data.themeColor}} />
-             <span className="text-white text-[1.6rem] font-bold uppercase tracking-[0.2em]">
+             <span className="text-white text-[1.6rem] font-bold uppercase tracking-[0.2em] whitespace-nowrap">
                {data.category}
              </span>
          </div>
@@ -421,7 +430,7 @@ const Template8 = ({ data }: { data: PostData }) => {
 
          {data.subtitle && (
             <div className="border-l-4 pl-6 mb-8" style={{borderColor: data.themeColor}}>
-              <p className="text-[1.8rem] text-slate-200 font-medium leading-snug drop-shadow-lg">
+              <p className="text-[1.8rem] text-slate-200 font-medium leading-[1.3] drop-shadow-lg">
                 {data.subtitle}
               </p>
             </div>
@@ -459,7 +468,7 @@ const Template9 = ({ data }: { data: PostData }) => {
       <div className={`absolute bottom-0 left-0 w-full px-12 flex flex-col ${isStory(data.format) ? 'pb-40' : 'pb-12'}`}>
          
          <div className="mb-8">
-            <span className="text-white text-[1.8rem] font-bold uppercase tracking-[0.3em]">
+            <span className="text-white text-[1.8rem] font-bold uppercase tracking-[0.3em] whitespace-nowrap">
                {data.category}
             </span>
          </div>
@@ -470,7 +479,7 @@ const Template9 = ({ data }: { data: PostData }) => {
 
          {data.subtitle && (
            <div className="pl-6 border-l-2 border-white/40 mb-10">
-              <p className="text-[1.8rem] text-white/90 font-light leading-snug">
+              <p className="text-[1.8rem] text-white/90 font-light leading-[1.3]">
                 {data.subtitle}
               </p>
            </div>
@@ -508,6 +517,9 @@ export const CanvasRenderer: React.FC<TemplateRendererProps> = ({ data, id }) =>
         width: `${width}px`,
         height: `${height}px`,
         fontFamily: data.fontFamily, // Apply dynamic font
+        textRendering: 'geometricPrecision', // Ensures fonts render accurately
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
       }}
     >
       {renderTemplate()}
