@@ -54,17 +54,19 @@ const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, 
     <div className={`flex items-center w-full mt-auto pt-6 border-t-2 ${borderColor} ${justifyClass}`}>
       {data.showInsta && (
         <div className={`flex items-center gap-2 font-bold text-xl ${textColor}`}>
-          <div className={`p-1 rounded-full border-2 flex items-center justify-center ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
+          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
              <Instagram size={18} className={iconColor} />
           </div>
-          <span className="leading-none mt-[2px]">{data.instagram}</span>
+          <span className="leading-none">{data.instagram}</span>
         </div>
       )}
       
       {data.showUrl && (
         <div className={`flex items-center gap-2 font-semibold text-lg opacity-90 ${textColor} ${center ? '' : 'ml-auto'}`}>
-          <Globe size={20} />
-          <span className="leading-none mt-[2px]">{data.siteUrl}</span>
+          <div className="w-8 h-8 flex items-center justify-center shrink-0">
+             <Globe size={22} />
+          </div>
+          <span className="leading-none">{data.siteUrl}</span>
         </div>
       )}
     </div>
@@ -82,7 +84,8 @@ const Template1 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover' }}
         />
          <BrandLogo data={data} />
          <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-black/50 to-transparent" />
@@ -120,7 +123,8 @@ const Template2 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover' }}
        />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent opacity-95" />
       
@@ -157,7 +161,8 @@ const Template3 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full z-0"
+          style={{ objectFit: 'cover' }}
        />
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-slate-900/40 z-0" />
@@ -204,7 +209,8 @@ const Template4 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover' }}
        />
       
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
@@ -257,7 +263,8 @@ const Template5 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover' }}
         />
         {/* Subtle gradient at bottom of image to help transition */}
         <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/40 to-transparent" />
@@ -308,7 +315,8 @@ const Template6 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover' }}
        />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/30" />
       
@@ -360,7 +368,8 @@ const Template7 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover' }}
        />
        {/* Strong gradient at bottom for text contrast */}
        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
@@ -414,7 +423,8 @@ const Template8 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full z-0"
+          style={{ objectFit: 'cover' }}
        />
       {/* Smooth Gradient */}
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/70 to-transparent" />
@@ -458,7 +468,8 @@ const Template9 = ({ data }: { data: PostData }) => {
           src={data.imageUrl} 
           alt="Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover grayscale-[50%]"
+          className="absolute inset-0 w-full h-full grayscale-[50%]"
+          style={{ objectFit: 'cover' }}
        />
       
       {/* Strong Brand Gradient Overlay */}

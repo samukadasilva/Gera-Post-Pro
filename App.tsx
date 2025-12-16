@@ -17,7 +17,7 @@ import {
   Settings,
   X,
   Loader2,
-  Cloud,
+  Cloud, 
   CloudOff,
   Mail,
   ArrowRight,
@@ -523,14 +523,15 @@ const App: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(element, {
-        scale: 1, 
+        scale: 3, // Increased scale for high resolution
         useCORS: true, 
-        // IMPORTANT: allowTaint must be false (default) if we want to call toDataURL().
-        // If it is true, the canvas is "tainted" by cross-origin images and toDataURL throws a security error.
-        // We rely on useCORS and crossOrigin="anonymous" on img tags instead.
         allowTaint: false,
         backgroundColor: null,
-        logging: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
       });
 
       const link = document.createElement('a');
@@ -683,17 +684,21 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Ghost Renderer for Download */}
+        {/* Ghost Renderer for Download 
+            MOVED to top/left 0 with z-index -50 to ensure proper rendering context 
+            while staying hidden. -10000px causes rendering clipping in some browsers.
+        */}
         <div 
           style={{ 
             position: 'fixed', 
-            left: '-10000px', 
-            top: '0', 
+            left: 0, 
+            top: 0, 
             width: ASPECT_RATIOS[postData.format].width, 
             height: ASPECT_RATIOS[postData.format].height,
             overflow: 'hidden',
-            visibility: 'visible',
-            zIndex: -50
+            visibility: 'visible', // Must be visible for html2canvas
+            zIndex: -50, // Behind the main app background
+            pointerEvents: 'none'
           }}
         >
           <CanvasRenderer data={postData} id="ghost-canvas-download" />
