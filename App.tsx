@@ -3,12 +3,153 @@ import { ControlPanel } from './components/ControlPanel';
 import { CanvasRenderer } from './components/CanvasTemplates';
 import { PostData, ASPECT_RATIOS } from './types';
 import { INITIAL_POST_DATA } from './constants';
-import { Monitor, PanelLeftClose, PanelLeftOpen, Check, User, Crown, Lock, Facebook } from 'lucide-react';
+import { 
+  Monitor, 
+  PanelLeftClose, 
+  PanelLeftOpen, 
+  Check, 
+  User, 
+  Crown, 
+  Lock, 
+  Facebook, 
+  LogOut, 
+  CreditCard, 
+  Settings,
+  X,
+  Loader2
+} from 'lucide-react';
+import { auth, googleProvider, facebookProvider } from './firebase';
+import { signInWithPopup, signOut, updateProfile, User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 
 declare const html2canvas: any;
 
-// --- Mock Auth Component ---
-const AuthOverlay = ({ onLogin }: { onLogin: () => void }) => {
+// --- User Profile Modal ---
+interface UserProfileModalProps {
+  user: FirebaseUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onLogout: () => void;
+}
+
+const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, isOpen, onClose, onLogout }) => {
+  const [displayName, setDisplayName] = useState(user.displayName || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    setDisplayName(user.displayName || '');
+  }, [user]);
+
+  if (!isOpen) return null;
+
+  const handleUpdateProfile = async () => {
+    setIsUpdating(true);
+    try {
+      await updateProfile(user, { displayName });
+      alert('Perfil atualizado com sucesso!');
+    } catch (error) {
+      console.error("Erro ao atualizar", error);
+      alert('Erro ao atualizar perfil.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleManageSubscription = () => {
+    // Aqui você redirecionaria para o portal do cliente Stripe ou similar
+    alert("Redirecionando para o portal de pagamentos...");
+    // window.location.href = "SEU_LINK_DO_STRIPE_CUSTOMER_PORTAL";
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <User size={20} /> Minha Conta
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center justify-center -mt-12 mb-4">
+             <div className="w-20 h-20 rounded-full border-4 border-white bg-slate-200 overflow-hidden shadow-lg">
+               {user.photoURL ? (
+                 <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full flex items-center justify-center bg-slate-700 text-white text-2xl font-bold">
+                   {displayName.charAt(0).toUpperCase()}
+                 </div>
+               )}
+             </div>
+             <span className="text-xs text-slate-500 mt-2 font-mono">{user.uid.slice(0, 8)}...</span>
+          </div>
+
+          {/* Form */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">Nome Completo</label>
+              <input 
+                type="text" 
+                value={displayName} 
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">E-mail (Login)</label>
+              <input 
+                type="email" 
+                value={user.email || ''} 
+                disabled 
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* Subscription Status */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+             <div>
+               <p className="text-xs text-green-800 font-bold uppercase tracking-wide">Status da Assinatura</p>
+               <p className="text-green-700 font-semibold flex items-center gap-1">
+                 <Crown size={14} /> Ativo - Plano Pro
+               </p>
+             </div>
+             <button 
+               onClick={handleManageSubscription}
+               className="text-xs bg-white border border-green-200 text-green-700 px-3 py-1.5 rounded-md hover:bg-green-100 font-medium flex items-center gap-1 shadow-sm transition-colors"
+             >
+               <CreditCard size={12} /> Gerenciar
+             </button>
+          </div>
+
+          <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+             <button 
+               onClick={handleUpdateProfile}
+               disabled={isUpdating}
+               className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-70"
+             >
+               {isUpdating ? <Loader2 className="animate-spin" size={16} /> : <Settings size={16} />} 
+               Salvar Alterações
+             </button>
+             
+             <button 
+               onClick={onLogout}
+               className="w-full bg-red-50 text-red-600 font-bold py-2.5 rounded-lg hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+             >
+               <LogOut size={16} /> Sair da Conta
+             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Auth Component ---
+const AuthOverlay = ({ onLoginGoogle, onLoginFacebook }: { onLoginGoogle: () => void, onLoginFacebook: () => void }) => {
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-white/10">
@@ -20,7 +161,7 @@ const AuthOverlay = ({ onLogin }: { onLogin: () => void }) => {
              <Lock size={32} strokeWidth={2.5} />
           </div>
           <h1 className="text-3xl font-black mb-2 tracking-tight">Gera Post Pro</h1>
-          <p className="opacity-90 font-medium text-slate-300">Acesso exclusivo para assinantes</p>
+          <p className="opacity-90 font-medium text-slate-300">Faça login para desbloquear acesso ilimitado</p>
         </div>
         
         <div className="p-8">
@@ -29,29 +170,29 @@ const AuthOverlay = ({ onLogin }: { onLogin: () => void }) => {
                 <div className="bg-green-100 p-1.5 rounded-full text-green-600 mt-0.5"><Check size={16} strokeWidth={4} /></div>
                 <div>
                   <span className="font-bold block text-slate-900">Salvar Configurações</span>
-                  <span className="text-xs text-slate-500">Sua logo, cores e fontes ficam salvas para o próximo acesso.</span>
+                  <span className="text-xs text-slate-500">Sua logo, cores e fontes ficam salvas na nuvem.</span>
                 </div>
               </div>
               <div className="flex items-start gap-4 text-slate-700">
                 <div className="bg-green-100 p-1.5 rounded-full text-green-600 mt-0.5"><Check size={16} strokeWidth={4} /></div>
                 <div>
-                   <span className="font-bold block text-slate-900">Modelos Premium</span>
-                   <span className="text-xs text-slate-500">Acesso ilimitado aos modelos 7, 8 e 9 e atualizações.</span>
+                   <span className="font-bold block text-slate-900">9 Modelos Premium</span>
+                   <span className="text-xs text-slate-500">Acesso total a todos os templates (Feed e Story).</span>
                 </div>
               </div>
            </div>
 
            <div className="space-y-3">
              <button 
-               onClick={onLogin}
+               onClick={onLoginFacebook}
                className="w-full bg-[#1877F2] text-white font-bold py-3 rounded-lg hover:bg-[#166fe5] transition-all flex items-center justify-center gap-3 shadow-md"
              >
                <Facebook size={20} fill="currentColor" />
-               Continuar com Facebook
+               Entrar com Facebook
              </button>
 
              <button 
-               onClick={onLogin}
+               onClick={onLoginGoogle}
                className="w-full bg-white text-slate-700 border border-slate-300 font-bold py-3 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-3 shadow-sm"
              >
                {/* Google SVG Icon */}
@@ -61,21 +202,8 @@ const AuthOverlay = ({ onLogin }: { onLogin: () => void }) => {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                </svg>
-               Continuar com Google
+               Entrar com Google
              </button>
-
-             <button 
-               onClick={onLogin}
-               className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-md"
-             >
-               <User size={20} />
-               Entrar com E-mail
-             </button>
-           </div>
-           
-           <div className="text-center pt-4 mt-2">
-             <p className="text-xs text-slate-400 mb-2">Plano Mensal - R$ 29,90/mês</p>
-             <a href="#" className="text-orange-600 font-bold hover:underline text-sm">Criar nova assinatura</a>
            </div>
         </div>
       </div>
@@ -88,45 +216,69 @@ const App: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.4);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Auth States
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   const previewWrapperRef = useRef<HTMLDivElement>(null);
 
-  // --- Persistence Logic ---
+  // --- Auth & Data Persistence Logic ---
   useEffect(() => {
-    // 1. Check Auth
-    const wasLoggedIn = localStorage.getItem('geraPostIsLoggedIn');
-    if (wasLoggedIn === 'true') {
-       setIsAuthenticated(true);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoadingAuth(false);
+    });
 
-    // 2. Load Data (Logo, Colors, etc)
+    // Load Local Data (Still useful for quick recovery)
     const savedData = localStorage.getItem('geraPostData');
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        // Merge saved data with initial structure to ensure new fields are present
         setPostData(prev => ({
            ...prev,
            ...parsed,
-           // Ensure logo object is merged correctly if schema changed
            logo: { ...prev.logo, ...parsed.logo }
         }));
       } catch (e) {
         console.error("Error loading saved data", e);
       }
     }
+
+    return () => unsubscribe();
   }, []);
 
-  const handleLogin = () => {
-    // Simulate login
-    setIsAuthenticated(true);
-    localStorage.setItem('geraPostIsLoggedIn', 'true');
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login Google Failed", error);
+      alert("Erro ao fazer login com Google. Verifique o console ou as configurações do Firebase.");
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      await signInWithPopup(auth, facebookProvider);
+    } catch (error) {
+      console.error("Login Facebook Failed", error);
+      alert("Erro ao fazer login com Facebook. Verifique as configurações.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsProfileOpen(false);
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout Failed", error);
+    }
   };
 
   const handleUpdateData = useCallback((partial: Partial<PostData>) => {
     setPostData(prev => {
       const newData = { ...prev, ...partial };
-      // Save on every change
       localStorage.setItem('geraPostData', JSON.stringify(newData));
       return newData;
     });
@@ -191,10 +343,32 @@ const App: React.FC = () => {
     }
   };
 
+  if (loadingAuth) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-100 text-slate-500">
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col md:flex-row h-screen w-full overflow-hidden bg-gray-100 font-sans">
       
-      {!isAuthenticated && <AuthOverlay onLogin={handleLogin} />}
+      {!user && (
+        <AuthOverlay 
+          onLoginGoogle={handleGoogleLogin} 
+          onLoginFacebook={handleFacebookLogin} 
+        />
+      )}
+
+      {user && (
+        <UserProfileModal 
+          user={user} 
+          isOpen={isProfileOpen} 
+          onClose={() => setIsProfileOpen(false)}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Left: Tabbed Control Panel (Collapsible) */}
       <div 
@@ -233,15 +407,28 @@ const App: React.FC = () => {
            </div>
            
            <div className="flex items-center gap-4">
-              {isAuthenticated && (
-                <div className="hidden sm:flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 shadow-inner">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                  <span className="text-[10px] text-gray-300 font-medium">Assinante Pro</span>
+              {/* Authenticated User Profile Trigger */}
+              {user ? (
+                 <button 
+                   onClick={() => setIsProfileOpen(true)}
+                   className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 pr-3 pl-1 py-1 rounded-full border border-slate-600 transition-colors group"
+                 >
+                    <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                       {user.photoURL ? (
+                         <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                       ) : (
+                         user.displayName ? user.displayName.charAt(0).toUpperCase() : <User size={14} />
+                       )}
+                    </div>
+                    <span className="text-xs text-gray-200 font-medium max-w-[100px] truncate">
+                      {user.displayName || 'Usuário'}
+                    </span>
+                 </button>
+              ) : (
+                <div className="hidden sm:flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 opacity-50">
+                  <span className="text-[10px] text-gray-300 font-medium">Visitante</span>
                 </div>
               )}
-              <div className="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono border border-gray-600">
-                  {ASPECT_RATIOS[postData.format].width} x {ASPECT_RATIOS[postData.format].height} px
-              </div>
            </div>
         </div>
 
