@@ -1,4 +1,5 @@
 export type FormatType = 'feed-4-5' | 'story-9-16';
+export type ImagePosition = 'left' | 'center' | 'right';
 
 export interface LogoSettings {
   url: string | null;
@@ -12,6 +13,7 @@ export interface PostData {
   subtitle: string;
   category: string; // "Retranca" or "Editoria"
   imageUrl: string;
+  imagePosition: ImagePosition; // Nova propriedade para alinhar a imagem
   siteUrl: string;
   instagram: string;
   themeColor: string; // Accents

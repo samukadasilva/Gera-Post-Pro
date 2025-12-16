@@ -11,6 +11,14 @@ interface TemplateRendererProps {
 
 const isStory = (format: string) => format === 'story-9-16';
 
+const getBgPosition = (pos: string) => {
+    switch (pos) {
+        case 'left': return 'left center';
+        case 'right': return 'right center';
+        default: return 'center center';
+    }
+};
+
 // --- Components ---
 
 const BrandLogo = ({ data }: { data: PostData }) => {
@@ -32,19 +40,24 @@ const BrandLogo = ({ data }: { data: PostData }) => {
   );
 };
 
+// CORREÇÃO CRÍTICA NA EDITORIA:
+// Usamos display: flex, items-center, justify-center com altura fixa (h-14).
+// Isso força o navegador e o html2canvas a calcularem o centro exato.
 const CategoryTag = ({ data, className = "", style = {} }: { data: PostData, className?: string, style?: React.CSSProperties }) => {
   if (!data.showCategory || !data.category) return null;
   return (
-    // Changed to inline-flex to center text perfectly in the box during HTML2Canvas export
-    <span 
-      className={`inline-flex items-center justify-center px-6 py-3 text-white text-[1.6rem] font-bold uppercase tracking-widest shadow-md whitespace-nowrap leading-none ${className}`}
+    <div 
+      className={`inline-flex items-center justify-center px-6 h-14 text-white uppercase tracking-widest shadow-md whitespace-nowrap ${className}`}
       style={{ backgroundColor: data.categoryBgColor, ...style }}
     >
-      {data.category}
-    </span>
+      <span className="text-[1.6rem] font-bold leading-none mt-[2px]">{data.category}</span>
+    </div>
   );
 };
 
+// CORREÇÃO CRÍTICA NO RODAPÉ:
+// Adicionado 'whitespace-nowrap' para impedir quebra de linha.
+// Adicionado 'items-center' para garantir alinhamento vertical ícone/texto.
 const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, theme?: 'light' | 'dark', center?: boolean }) => {
   const textColor = theme === 'dark' ? 'text-white' : 'text-slate-800';
   const iconColor = theme === 'dark' ? 'text-white' : 'text-slate-900';
@@ -52,29 +65,28 @@ const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, 
   const justifyClass = center ? 'justify-center gap-12' : 'justify-between';
 
   return (
-    <div className={`flex items-center w-full mt-auto pt-6 border-t-2 ${borderColor} ${justifyClass}`}>
+    <div className={`flex items-center w-full mt-auto border-t-2 h-24 ${borderColor} ${justifyClass}`}>
       {data.showInsta && (
         <div 
-          className={`flex items-center gap-2 font-bold text-xl ${textColor}`}
-          data-footer-item="true" // Marker for onclone script
+          className={`flex items-center gap-3 font-bold text-xl h-full ${textColor}`}
+          data-footer-item="true"
         >
-          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
-             <Instagram size={18} className={iconColor} />
+          <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
+             <Instagram size={20} className={iconColor} />
           </div>
-          {/* whitespace-nowrap prevents the text from dropping below the icon */}
-          <span className="leading-none whitespace-nowrap pb-0.5">{data.instagram}</span>
+          <span className="whitespace-nowrap leading-none mt-1">{data.instagram}</span>
         </div>
       )}
       
       {data.showUrl && (
         <div 
-          className={`flex items-center gap-2 font-semibold text-lg opacity-90 ${textColor} ${center ? '' : 'ml-auto'}`}
+          className={`flex items-center gap-3 font-semibold text-lg opacity-90 h-full ${textColor} ${center ? '' : 'ml-auto'}`}
           data-footer-item="true"
         >
-          <div className="w-8 h-8 flex items-center justify-center shrink-0">
-             <Globe size={22} />
+          <div className="w-9 h-9 flex items-center justify-center shrink-0">
+             <Globe size={24} />
           </div>
-          <span className="leading-none whitespace-nowrap pb-0.5">{data.siteUrl}</span>
+          <span className="whitespace-nowrap leading-none mt-1">{data.siteUrl}</span>
         </div>
       )}
     </div>
@@ -88,10 +100,13 @@ const Template1 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full flex flex-col bg-white relative">
       <div className="h-[60%] w-full relative overflow-hidden">
-        {/* Background Image Fix: Using div instead of img for better html2canvas support */}
+        {/* Background Image with Align Control */}
         <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
         />
          <BrandLogo data={data} />
          <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-black/50 to-transparent" />
@@ -109,7 +124,6 @@ const Template1 = ({ data }: { data: PostData }) => {
              {data.headline}
            </h1>
            {data.subtitle && (
-             // Increased line-height slightly to prevent cutoff at bottom of letters
              <p className="text-[1.7rem] text-slate-500 leading-[1.3] line-clamp-4">
                {data.subtitle}
              </p>
@@ -127,8 +141,11 @@ const Template2 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900">
        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent opacity-95" />
       
@@ -161,8 +178,11 @@ const Template3 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative overflow-hidden">
        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat z-0"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-slate-900/40 z-0" />
@@ -206,8 +226,11 @@ const Template4 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-black">
       <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
       
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
@@ -220,7 +243,7 @@ const Template4 = ({ data }: { data: PostData }) => {
          <div className="px-12 mb-2">
             <CategoryTag 
               data={data} 
-              className="mb-8 rounded-lg min-w-[150px] text-center" 
+              className="mb-8 rounded-lg min-w-[150px]" 
               style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.4)' }} 
             />
             
@@ -257,8 +280,11 @@ const Template5 = ({ data }: { data: PostData }) => {
       {/* Top Image Section */}
       <div className={`w-full relative overflow-hidden ${isSt ? 'h-[55%]' : 'h-[60%]'}`}>
         <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
         />
         {/* Subtle gradient at bottom of image to help transition */}
         <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/40 to-transparent" />
@@ -270,12 +296,7 @@ const Template5 = ({ data }: { data: PostData }) => {
          
          {/* Floating Badge - Overlaps the seam */}
          <div className="absolute -top-7 left-10 z-10">
-            <span 
-              className="inline-flex items-center justify-center px-8 py-4 text-white text-[1.8rem] font-bold uppercase tracking-widest shadow-lg leading-none"
-              style={{ backgroundColor: data.categoryBgColor }} 
-            >
-              {data.category}
-            </span>
+            <CategoryTag data={data} className="px-8 py-0 h-16 shadow-lg" />
          </div>
 
          {/* Content Area */}
@@ -306,8 +327,11 @@ const Template6 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900">
       <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/30" />
       
@@ -317,7 +341,7 @@ const Template6 = ({ data }: { data: PostData }) => {
       <div className={`absolute bottom-0 left-0 right-0 z-10 flex flex-col items-center px-12 text-center ${isStory(data.format) ? 'pb-24' : 'pb-12'}`}>
              
          <div className="mb-6">
-            <CategoryTag data={data} className="rounded-full px-10 py-3 shadow-[0_0_20px_rgba(0,0,0,0.3)] border-2 border-white/20" />
+            <CategoryTag data={data} className="rounded-full px-10 h-14 shadow-[0_0_20px_rgba(0,0,0,0.3)] border-2 border-white/20" />
          </div>
 
          <h1 
@@ -356,8 +380,11 @@ const Template7 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900 font-sans">
        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
        {/* Strong gradient at bottom for text contrast */}
        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
@@ -368,12 +395,7 @@ const Template7 = ({ data }: { data: PostData }) => {
        {/* Story: Pushed higher (bottom-80) to leave gap for stickers. Feed: Lower (bottom-40). */}
        <div className={`absolute left-0 w-full flex flex-col px-10 ${isSt ? 'bottom-80' : 'bottom-40'}`}>
           <div className="mb-4">
-             <span 
-               className="inline-flex items-center justify-center py-2 px-5 text-white text-[1.4rem] font-bold uppercase tracking-wider shadow-lg rounded-sm leading-none"
-               style={{ backgroundColor: data.categoryBgColor }}
-             >
-               {data.category}
-             </span>
+             <CategoryTag data={data} className="rounded-sm shadow-lg h-14 px-8" />
           </div>
 
           <h1 className="text-[3.5rem] font-black text-white leading-[1] mb-6 drop-shadow-2xl">
@@ -408,8 +430,11 @@ const Template8 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900 overflow-hidden">
       <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat z-0"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
       {/* Smooth Gradient */}
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/70 to-transparent" />
@@ -419,7 +444,7 @@ const Template8 = ({ data }: { data: PostData }) => {
          {/* Dot & Category */}
          <div className="mb-6 flex items-center gap-4">
              <div className="w-4 h-4 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)] ring-2 ring-white/20" style={{backgroundColor: data.themeColor}} />
-             <span className="text-white text-[1.6rem] font-bold uppercase tracking-[0.2em] whitespace-nowrap">
+             <span className="text-white text-[1.6rem] font-bold uppercase tracking-[0.2em] whitespace-nowrap mt-1">
                {data.category}
              </span>
          </div>
@@ -450,8 +475,11 @@ const Template9 = ({ data }: { data: PostData }) => {
   return (
     <div className="w-full h-full relative bg-slate-900">
       <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center grayscale-[50%]"
-          style={{ backgroundImage: `url(${data.imageUrl})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-no-repeat grayscale-[50%]"
+          style={{ 
+              backgroundImage: `url(${data.imageUrl})`,
+              backgroundPosition: getBgPosition(data.imagePosition) 
+          }}
        />
       
       {/* Strong Brand Gradient Overlay */}

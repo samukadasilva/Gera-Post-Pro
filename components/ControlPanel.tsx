@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { PostData, ASPECT_RATIOS } from '../types';
+import { PostData, ASPECT_RATIOS, ImagePosition } from '../types';
 import { scrapeNewsData } from '../utils';
 import { CanvasRenderer } from './CanvasTemplates';
 import { 
@@ -11,7 +11,9 @@ import {
   ArrowUpRight,
   AlignCenter,
   Save,
-  Type
+  Type,
+  AlignLeft,
+  AlignRight
 } from 'lucide-react';
 
 interface ControlPanelProps {
@@ -196,6 +198,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     );
   };
 
+  const ImageAlignButton = ({ pos, icon: Icon }: { pos: ImagePosition, icon: any }) => (
+    <button 
+      onClick={() => updateData({ imagePosition: pos })}
+      className={`p-1.5 rounded border transition-colors ${data.imagePosition === pos ? 'bg-orange-100 border-orange-500 text-orange-700' : 'bg-gray-50 border-gray-300 text-gray-500 hover:bg-gray-100'}`}
+      title={`Alinhar Imagem: ${pos === 'left' ? 'Esquerda' : pos === 'right' ? 'Direita' : 'Centro'}`}
+    >
+      <Icon size={14} />
+    </button>
+  );
+
   return (
     <div className="flex flex-col h-full bg-white w-full font-sans">
       
@@ -317,7 +329,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       />
                    </div>
                    <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Imagem Fundo</label>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <label className="block text-[10px] font-bold text-gray-500">Imagem Fundo</label>
+                        <div className="flex gap-1">
+                          <ImageAlignButton pos="left" icon={AlignLeft} />
+                          <ImageAlignButton pos="center" icon={AlignCenter} />
+                          <ImageAlignButton pos="right" icon={AlignRight} />
+                        </div>
+                      </div>
                       <div className="flex gap-1">
                         <input type="text" value={data.imageUrl} onChange={(e) => updateData({ imageUrl: e.target.value })} className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded outline-none h-7" />
                          <button onClick={() => bgInputRef.current?.click()} className="bg-gray-200 px-2 rounded hover:bg-gray-300 h-7 flex items-center justify-center w-8" title="Upload"><Upload size={14}/></button>

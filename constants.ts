@@ -5,6 +5,7 @@ export const INITIAL_POST_DATA: PostData = {
   subtitle: 'O subtítulo ou lide da matéria jornalística complementar aparece aqui para dar mais contexto ao leitor sobre o fato ocorrido.',
   category: 'Geral',
   imageUrl: 'https://picsum.photos/1080/1350',
+  imagePosition: 'center', // Padrão
   siteUrl: 'www.noticiascolombia.com.br',
   instagram: '@noticiascolombia',
   themeColor: '#ea580c', // Default Orange accent
