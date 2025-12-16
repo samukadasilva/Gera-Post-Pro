@@ -52,18 +52,18 @@ const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, 
   return (
     <div className={`flex items-center w-full mt-auto pt-6 border-t-2 ${borderColor} ${justifyClass}`}>
       {data.showInsta && (
-        <div className={`flex items-center gap-3 font-bold text-xl ${textColor}`}>
-          <div className={`p-1.5 rounded-full border-2 ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
-             <Instagram size={24} className={iconColor} />
+        <div className={`flex items-center gap-2 font-bold text-xl ${textColor}`}>
+          <div className={`p-1 rounded-full border-2 flex items-center justify-center ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
+             <Instagram size={18} className={iconColor} />
           </div>
-          <span>{data.instagram}</span>
+          <span className="leading-none mt-[2px]">{data.instagram}</span>
         </div>
       )}
       
       {data.showUrl && (
         <div className={`flex items-center gap-2 font-semibold text-lg opacity-90 ${textColor} ${center ? '' : 'ml-auto'}`}>
-          <Globe size={24} />
-          <span>{data.siteUrl}</span>
+          <Globe size={20} />
+          <span className="leading-none mt-[2px]">{data.siteUrl}</span>
         </div>
       )}
     </div>
