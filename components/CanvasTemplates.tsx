@@ -41,23 +41,22 @@ const BrandLogo = ({ data }: { data: PostData }) => {
 };
 
 // CORREÇÃO CRÍTICA NA EDITORIA:
-// Usamos display: flex, items-center, justify-center com altura fixa (h-14).
-// Isso força o navegador e o html2canvas a calcularem o centro exato.
+// Adicionado z-50 para garantir que fique acima de tudo no render.
+// Adicionado classe 'category-tag-render' para manipulação direta no html2canvas se necessário.
 const CategoryTag = ({ data, className = "", style = {} }: { data: PostData, className?: string, style?: React.CSSProperties }) => {
   if (!data.showCategory || !data.category) return null;
   return (
     <div 
-      className={`inline-flex items-center justify-center px-6 h-14 text-white uppercase tracking-widest shadow-md whitespace-nowrap ${className}`}
+      className={`category-tag-render relative z-50 inline-flex items-center justify-center px-6 h-14 text-white uppercase tracking-widest shadow-md whitespace-nowrap ${className}`}
       style={{ backgroundColor: data.categoryBgColor, ...style }}
     >
-      <span className="text-[1.6rem] font-bold leading-none mt-[2px]">{data.category}</span>
+      <span className="text-[1.6rem] font-bold leading-none pt-[2px]">{data.category}</span>
     </div>
   );
 };
 
 // CORREÇÃO CRÍTICA NO RODAPÉ:
-// Adicionado 'whitespace-nowrap' para impedir quebra de linha.
-// Adicionado 'items-center' para garantir alinhamento vertical ícone/texto.
+// Padronização total: gap-2, font-bold, text-xl e ícones size={28} para ambos.
 const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, theme?: 'light' | 'dark', center?: boolean }) => {
   const textColor = theme === 'dark' ? 'text-white' : 'text-slate-800';
   const iconColor = theme === 'dark' ? 'text-white' : 'text-slate-900';
@@ -68,25 +67,29 @@ const FooterBar = ({ data, theme = 'light', center = false }: { data: PostData, 
     <div className={`flex items-center w-full mt-auto border-t-2 h-24 ${borderColor} ${justifyClass}`}>
       {data.showInsta && (
         <div 
-          className={`flex items-center gap-3 font-bold text-xl h-full ${textColor}`}
+          className={`flex items-center gap-2 font-bold text-xl h-full ${textColor}`}
           data-footer-item="true"
         >
-          <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 ${theme === 'dark' ? 'border-white' : 'border-slate-900'}`}>
-             <Instagram size={20} className={iconColor} />
+          <div className="flex items-center justify-center shrink-0">
+             <Instagram size={28} className={iconColor} />
           </div>
-          <span className="whitespace-nowrap leading-none mt-1">{data.instagram}</span>
+          {/* Removido mt-1 para evitar desvio no download */}
+          <span className="whitespace-nowrap leading-none pt-[2px]">{data.instagram}</span>
         </div>
       )}
       
       {data.showUrl && (
         <div 
-          className={`flex items-center gap-3 font-semibold text-lg opacity-90 h-full ${textColor} ${center ? '' : 'ml-auto'}`}
+          // Alterado de gap-3 para gap-2, font-semibold para font-bold, text-lg para text-xl
+          className={`flex items-center gap-2 font-bold text-xl h-full ${textColor} ${center ? '' : 'ml-auto'}`}
           data-footer-item="true"
         >
-          <div className="w-9 h-9 flex items-center justify-center shrink-0">
-             <Globe size={24} />
+          <div className="flex items-center justify-center shrink-0">
+             {/* Alterado de size={24} para size={28} */}
+             <Globe size={28} className={iconColor} />
           </div>
-          <span className="whitespace-nowrap leading-none mt-1">{data.siteUrl}</span>
+          {/* Removido mt-1 para evitar desvio no download */}
+          <span className="whitespace-nowrap leading-none pt-[2px]">{data.siteUrl}</span>
         </div>
       )}
     </div>

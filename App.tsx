@@ -533,7 +533,7 @@ const App: React.FC = () => {
 
     try {
       // 2. Wait longer for the hidden canvas to render images fully
-      await new Promise(resolve => setTimeout(resolve, 2000)); 
+      await new Promise(resolve => setTimeout(resolve, 2500)); 
 
       const element = document.getElementById('final-canvas-export'); 
       
@@ -569,12 +569,22 @@ const App: React.FC = () => {
                 el.style.fontVariant = 'normal';
                 el.style.setProperty('-webkit-font-smoothing', 'antialiased');
                 
-                // FORCE Footer elements to NEVER wrap
+                // FORCE Footer elements to NEVER wrap and align perfectly
                 const footers = el.querySelectorAll('[data-footer-item]');
                 footers.forEach((f: any) => {
                    f.style.whiteSpace = 'nowrap';
                    f.style.display = 'flex';
                    f.style.alignItems = 'center';
+                   f.style.lineHeight = '1';
+                });
+
+                // FORCE Category Tag visibility and Z-Index
+                const tags = el.querySelectorAll('.category-tag-render');
+                tags.forEach((t: any) => {
+                   t.style.zIndex = '99999';
+                   t.style.position = 'relative'; // or absolute dependent on layout context, usually relative works if container is flexible
+                   t.style.visibility = 'visible';
+                   t.style.opacity = '1';
                 });
             }
         },

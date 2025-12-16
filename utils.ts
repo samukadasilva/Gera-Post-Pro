@@ -1,7 +1,10 @@
 export const scrapeNewsData = async (url: string) => {
   try {
-    // Using AllOrigins as a CORS proxy to fetch external HTML
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    // Adiciona timestamp para evitar cache do proxy e do navegador
+    const timestamp = new Date().getTime();
+    
+    // Tenta primeiro com AllOrigins (geralmente mais estável para metadata)
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&t=${timestamp}`;
     
     const response = await fetch(proxyUrl);
     const data = await response.json();
@@ -31,6 +34,7 @@ export const scrapeNewsData = async (url: string) => {
     };
   } catch (error) {
     console.error("Scraping error:", error);
+    // Em caso de falha silenciosa, retornamos objetos vazios para não quebrar a UI
     throw error;
   }
 };
