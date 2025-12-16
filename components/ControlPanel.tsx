@@ -145,15 +145,22 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     }
   };
 
+  // --- CRITICAL FIX: Convert image to Base64 to avoid CORS/Distortion in Vercel ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo' | 'bg') => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      if (field === 'logo') {
-        updateData({ logo: { ...data.logo, url } });
-      } else {
-        updateData({ imageUrl: url });
-      }
+      const reader = new FileReader();
+      
+      reader.onloadend = () => {
+         const base64String = reader.result as string;
+         if (field === 'logo') {
+           updateData({ logo: { ...data.logo, url: base64String } });
+         } else {
+           updateData({ imageUrl: base64String });
+         }
+      };
+
+      reader.readAsDataURL(file);
     }
   };
 

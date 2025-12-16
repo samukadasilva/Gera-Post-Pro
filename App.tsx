@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { CanvasRenderer } from './components/CanvasTemplates';
+import { InstagramMockup } from './components/InstagramMockup'; // Importado
 import { PostData, ASPECT_RATIOS } from './types';
 import { INITIAL_POST_DATA } from './constants';
 import { 
@@ -524,8 +525,8 @@ const App: React.FC = () => {
     setShowDownloadCanvas(true);
 
     try {
-      // 2. Wait a significant amount of time for the hidden canvas to render images fully
-      await new Promise(resolve => setTimeout(resolve, 1500)); 
+      // 2. Wait longer for the hidden canvas to render images fully
+      await new Promise(resolve => setTimeout(resolve, 2000)); 
 
       const element = document.getElementById('final-canvas-export'); 
       
@@ -545,7 +546,7 @@ const App: React.FC = () => {
         width: width,
         height: height,
         useCORS: true, 
-        allowTaint: false,
+        allowTaint: true, // Allow tainted canvas, though toDataURL might fail if strict CORS, Base64 fixes this.
         backgroundColor: null,
         logging: false,
         scrollX: 0,
@@ -553,7 +554,8 @@ const App: React.FC = () => {
         windowWidth: width,
         windowHeight: height,
         x: 0,
-        y: 0
+        y: 0,
+        ignoreElements: (element: any) => false, // Capture everything
       });
 
       const link = document.createElement('a');
@@ -564,7 +566,7 @@ const App: React.FC = () => {
       link.click();
     } catch (error) {
       console.error("Error generating image:", error);
-      alert("Erro ao gerar a imagem. Tente novamente.");
+      alert("Erro ao gerar a imagem. Tente novamente ou use uma imagem carregada do seu computador.");
     } finally {
       // 4. Cleanup
       setShowDownloadCanvas(false);
@@ -697,14 +699,24 @@ const App: React.FC = () => {
         >
           {/* Visual Canvas Container (Scaled for viewing) */}
           <div 
-             className="origin-center shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out bg-white ring-1 ring-white/10"
+             className="origin-center shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out ring-1 ring-white/10"
              style={{ 
                transform: `scale(${previewScale})`,
+               // O tamanho aqui é baseado no aspect ratio para que o container escale,
+               // mas o Mockup dentro dele vai ter largura fixa de 1080px e crescer na altura.
                width: ASPECT_RATIOS[postData.format].width,
                height: ASPECT_RATIOS[postData.format].height,
+               // Permitir que o Mockup (que tem header e footer) transborde o tamanho "puro" da arte
+               // durante a visualização, centralizado.
+               display: 'flex',
+               alignItems: 'center',
+               justifyContent: 'center'
              }}
           >
-             <CanvasRenderer data={postData} id="canvas-preview" />
+             {/* AQUI ESTÁ O MOCKUP QUE APARECE SÓ NA TELA, NÃO NO DOWNLOAD */}
+             <InstagramMockup data={postData}>
+                <CanvasRenderer data={postData} id="canvas-preview" />
+             </InstagramMockup>
           </div>
         </div>
 
@@ -713,6 +725,7 @@ const App: React.FC = () => {
             Instead of a hidden ghost element, we use a full-screen overlay that renders ONLY when downloading.
             This ensures the browser fully renders the layout at 1:1 scale in the viewport,
             preventing distortion from scroll offsets or CSS transforms.
+            NOTE: CanvasRenderer is called DIRECTLY here, WITHOUT InstagramMockup.
         */}
         {showDownloadCanvas && (
           <div className="fixed inset-0 z-[9999] bg-slate-900 flex items-center justify-center overflow-auto animate-in fade-in duration-300">
