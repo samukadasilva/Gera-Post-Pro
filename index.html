@@ -24,18 +24,23 @@
         background: #94a3b8; 
       }
     </style>
-  <script type="importmap">
+    <!-- Import Map for local development/preview environments -->
+    <script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0"
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
-</head>
+  </head>
   <body class="bg-gray-50 text-slate-900 font-sans antialiased h-full overflow-hidden">
     <div id="root" class="h-full"></div>
+    <!-- CRITICAL FIX: Entry point for Vite/Bundlers -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
